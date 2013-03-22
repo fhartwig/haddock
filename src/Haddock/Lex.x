@@ -212,12 +212,18 @@ begin sc = \_ _ _ cont _ -> cont sc
 -- -----------------------------------------------------------------------------
 -- Lex a string as a Haskell identifier
 
+-- \' has to be replaced by ' before trying to parse identifiers
+processQuotes :: String -> String
+processQuotes []             = []
+processQuotes ('\\':'\'':cs) = '\'' : processQuotes cs
+processQuotes (c:cs)         = c : processQuotes cs
+
 ident :: Action
 ident pos str sc cont dflags = 
   case parseIdent dflags loc id of
 	Just names -> (TokIdent names, pos) : cont sc
 	Nothing -> (TokString str, pos) : cont sc
- where id = init (tail str)
+ where id = processQuotes $ init (tail str)
        -- TODO: Get the real filename here. Maybe we should just be
        --       using GHC SrcLoc's ourself?
        filename = mkFastString "<unknown file>"
